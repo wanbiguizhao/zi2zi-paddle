@@ -17,7 +17,7 @@ import random
 #from torch import nn
 #from torchvision import transforms
 
-#from utils.charset_util import processGlyphNames
+from utils.charset_util import processGlyphNames
 
 CN_CHARSET = None
 CN_T_CHARSET = None
@@ -58,20 +58,20 @@ def draw_single_char(ch, font, canvas_size, x_offset=0, y_offset=0):
     if l >= r or u >= d:
         return None
     text_region_img=img.crop((l,u,r,d))
-    text_region_img.show()
+    #text_region_img.show()
     text_high, text_wide = text_region_img.size
     new_len_side=max(text_high,text_wide)
     square_img=Image.new("L",(new_len_side,new_len_side),0)
     square_img.paste(text_region_img,( (new_len_side-text_high)//2, (new_len_side-text_wide)//2))
     square_img = square_img.resize((canvas_size, canvas_size), Image.ANTIALIAS)
-    square_img.show()
+    #square_img.show()
     np_square_img=255-np.array(square_img)
     square_img=Image.fromarray(np_square_img)
-    square_img.show()
+    #square_img.show()
     return square_img
 
-testfont=ImageFont.truetype("/home/liukun/gan/zi2zi-paddle/data/方正新楷体_GBK(完整).TTF", size=20)
-draw_single_char("你好",testfont,100)
+# testfont=ImageFont.truetype("/home/liukun/gan/zi2zi-paddle/data/方正新楷体_GBK(完整).TTF", size=20)
+# draw_single_char("你好",testfont,100)
 
 def draw_font2font_example(ch, src_font, dst_font, canvas_size, x_offset, y_offset, filter_hashes):
     dst_img = draw_single_char(ch, dst_font, canvas_size, x_offset, y_offset)
@@ -80,39 +80,46 @@ def draw_font2font_example(ch, src_font, dst_font, canvas_size, x_offset, y_offs
     if not dst_hash and dst_hash in filter_hashes:
         return None
     src_img = draw_single_char(ch, src_font, canvas_size, x_offset, y_offset)
-    example_img = Image.new("RGB", (canvas_size * 2, canvas_size), (255, 255, 255))
+    #example_img = Image.new("RGB", (canvas_size * 2, canvas_size), (255, 255, 255))
+    example_img = Image.new("L", (canvas_size * 2, canvas_size), 255)# 原来采用RGB格式，然后再转回到L格式，不知道为什么？
     example_img.paste(dst_img, (0, 0))
     example_img.paste(src_img, (canvas_size, 0))
     # convert to gray img
-    example_img = example_img.convert('L')
+    #example_img = example_img.convert('L')
+    #example_img.show()
     return example_img
-
+# testfont=ImageFont.truetype("/home/liukun/gan/zi2zi-paddle/data/方正新楷体_GBK(完整).TTF", size=40)
+# draw_font2font_example("你好",testfont,testfont,100,0,0,None)
 
 def draw_font2imgs_example(ch, src_font, dst_img, canvas_size, x_offset, y_offset):
     src_img = draw_single_char(ch, src_font, canvas_size, x_offset, y_offset)
     dst_img = dst_img.resize((canvas_size, canvas_size), Image.ANTIALIAS).convert('RGB')
-    example_img = Image.new("RGB", (canvas_size * 2, canvas_size), (255, 255, 255))
+    #example_img = Image.new("RGB", (canvas_size * 2, canvas_size), (255, 255, 255))
+    example_img = Image.new("L", (canvas_size * 2, canvas_size), 255)
     example_img.paste(dst_img, (0, 0))
     example_img.paste(src_img, (canvas_size, 0))
     # convert to gray img
-    example_img = example_img.convert('L')
+    #example_img = example_img.convert('L')
     return example_img
 
 
 def draw_imgs2imgs_example(src_img, dst_img, canvas_size):
     src_img = src_img.resize((canvas_size, canvas_size), Image.LANCZOS).convert('RGB')
     dst_img = dst_img.resize((canvas_size, canvas_size), Image.LANCZOS).convert('RGB')
-    example_img = Image.new("RGB", (canvas_size * 2, canvas_size), (255, 255, 255))
+    #example_img = Image.new("RGB", (canvas_size * 2, canvas_size), (255, 255, 255))
+    example_img = Image.new("L", (canvas_size * 2, canvas_size), 255)
     example_img.paste(dst_img, (0, 0))
     example_img.paste(src_img, (canvas_size, 0))
     # convert to gray img
-    example_img = example_img.convert('L')
+    #example_img = example_img.convert('L')
     return example_img
 
 
 def filter_recurring_hash(charset, font, canvas_size, x_offset, y_offset):
-    """ Some characters are missing in a given font, filter them
+    """ 
+    Some characters are missing in a given font, filter them
     by checking the recurring hashes
+    有些字符在字体中不存在，画出来的可能是空白的，或者是一个□，然后通过图片采样的方式找到这个字，过滤掉？
     """
     _charset = charset.copy()
     np.random.shuffle(_charset)
@@ -187,14 +194,16 @@ def font2imgs(src, dst, char_size, canvas_size,
 
 def fonts2imgs(src_fonts_dir, dst, char_size, canvas_size,
                x_offset, y_offset, sample_count, sample_dir):
+    # 这应该是两个非常重要的字体
     fontPlane00 = TTFont(os.path.join(src_fonts_dir, 'FZSONG_ZhongHuaSongPlane00_2020051520200519101119.TTF'))
     fontPlane02 = TTFont(os.path.join(src_fonts_dir, 'FZSONG_ZhongHuaSongPlane02_2020051520200519101142.TTF'))
-
+    # 这个是找到字体中的字符集
     charSetPlane00 = processGlyphNames(fontPlane00.getGlyphNames())
     charSetPlane02 = processGlyphNames(fontPlane02.getGlyphNames())
 
     charSetTotal = charSetPlane00 | charSetPlane02
     charListTotal = list(charSetTotal)
+    # 以上代码似乎没有用
 
     fontPlane00 = ImageFont.truetype(
         os.path.join(src_fonts_dir, 'FZSONG_ZhongHuaSongPlane00_2020051520200519101119.TTF'), char_size)
