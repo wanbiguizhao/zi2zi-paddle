@@ -1,6 +1,6 @@
 import paddle
 import paddle.nn as nn
-from torch.nn import init
+#from torch.nn import init
 import functools
 #from torch.optim import lr_scheduler
 import math
@@ -11,7 +11,7 @@ class Discriminator(nn.Layer):
     判别器模型
     """
 
-    def __init__(self, in_num_channel, embedding_num, out_num_channel=64, norm_layer=nn.BatchNorm2d, image_size=256):
+    def __init__(self, in_num_channel, embedding_num, out_num_channel=64, norm_layer=nn.BatchNorm2D, image_size=256):
         """
         判别器模型
         Parameters:
@@ -23,9 +23,9 @@ class Discriminator(nn.Layer):
         super(Discriminator, self).__init__()
 
         if type(norm_layer) == functools.partial:  # no need to use bias as BatchNorm2d has affine parameters
-            use_bias = norm_layer.func != nn.BatchNorm2d
+            use_bias = norm_layer.func != nn.BatchNorm2D
         else:
-            use_bias = norm_layer != nn.BatchNorm2d
+            use_bias = norm_layer != nn.BatchNorm2D
 
         # as tf implement, kernel_size = 5, use "SAME" padding, so we should use kw = 5 and padw = 2
         # kw = 4
@@ -46,7 +46,7 @@ class Discriminator(nn.Layer):
             # nf_mult_prev = nf_mult
             # nf_mult = min(2 ** n, 8)
             sequence += [
-                nn.Conv2D(in_num_channel, out_num_channel, kernel_size=kw, stride=2, padding=padw, bias=use_bias),
+                nn.Conv2D(in_num_channel, out_num_channel, kernel_size=kw, stride=2, padding=padw, bias_attr=use_bias),
                 norm_layer(out_num_channel),# BN层，需要再查一下资料，BN层可以避免梯度消失
                 nn.LeakyReLU(0.2, True)
             ]# 大小减半
@@ -56,7 +56,7 @@ class Discriminator(nn.Layer):
         # nf_mult_prev = nf_mult
         # nf_mult = 8
         sequence += [
-            nn.Conv2D(in_num_channel, out_num_channel, kernel_size=kw, stride=1, padding=padw, bias=use_bias),
+            nn.Conv2D(in_num_channel, out_num_channel, kernel_size=kw, stride=1, padding=padw, bias_attr=use_bias),
             norm_layer(out_num_channel),
             nn.LeakyReLU(0.2, True)
         ]
@@ -82,12 +82,41 @@ class Discriminator(nn.Layer):
         """Standard forward."""
         # features = self.model(input).view(input.shape[0], -1)
         features = self.model(input)
-        features = features.reshape(input.shape[0], -1)
+        features = features.reshape((input.shape[0], -1))
         binary_logits = self.binary(features)
         catagory_logits = self.catagory(features)
         return binary_logits, catagory_logits
 
 
-if __name__=="__main__":
-    dNet=Discriminator(1,10,64,image_size=50)
+if __name__ == '__main__':
+    dNet=Discriminator(1,10,64,image_size=128)
     paddle.summary(dNet,(1,1,128,128))
+    network_like="""
+        ---------------------------------------------------------------------------
+        Layer (type)       Input Shape          Output Shape         Param #    
+        ===========================================================================
+        Conv2D-1      [[1, 1, 128, 128]]    [1, 64, 64, 64]         1,664     
+        LeakyReLU-1    [[1, 64, 64, 64]]     [1, 64, 64, 64]           0       
+        Conv2D-2      [[1, 64, 64, 64]]     [1, 128, 32, 32]       204,800    
+        BatchNorm2D-1   [[1, 128, 32, 32]]    [1, 128, 32, 32]         512      
+        LeakyReLU-2    [[1, 128, 32, 32]]    [1, 128, 32, 32]          0       
+        Conv2D-3      [[1, 128, 32, 32]]    [1, 512, 16, 16]      1,638,400   
+        BatchNorm2D-2   [[1, 512, 16, 16]]    [1, 512, 16, 16]        2,048     
+        LeakyReLU-3    [[1, 512, 16, 16]]    [1, 512, 16, 16]          0       
+        Conv2D-4      [[1, 512, 16, 16]]   [1, 4096, 16, 16]     52,428,800   
+        BatchNorm2D-3  [[1, 4096, 16, 16]]   [1, 4096, 16, 16]       16,384     
+        LeakyReLU-4   [[1, 4096, 16, 16]]   [1, 4096, 16, 16]          0       
+        Conv2D-5     [[1, 4096, 16, 16]]     [1, 1, 16, 16]        102,401    
+        Linear-1          [[1, 256]]             [1, 1]              257      
+        Linear-2          [[1, 256]]            [1, 10]             2,570     
+        ===========================================================================
+        Total params: 54,397,836
+        Trainable params: 54,388,364
+        Non-trainable params: 9,472
+        ---------------------------------------------------------------------------
+        Input size (MB): 0.06
+        Forward/backward pass size (MB): 34.00
+        Params size (MB): 207.51
+        Estimated Total Size (MB): 241.58
+        ---------------------------------------------------------------------------
+        """
