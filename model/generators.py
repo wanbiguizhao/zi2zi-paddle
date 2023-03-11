@@ -126,6 +126,7 @@ class UnetSkipConnectionBlock(nn.Layer):
             encode = self.down(x)
             if style is None:
                 return encode
+            # 1，1 是因为下采样计算128，下采样了7次，所以就变成了1，目前的因此就意味着，必须把图片下采样的1x1才可以再做上采样，然后把字体的类别信息送进来，完成后面的上采样操作。
             enc = paddle.concat([style.reshape((style.shape[0],style.shape[1], 1, 1)), encode], 1)# 把样式的编码和encode结合到一起，然后在进行解码，所以就需要知道，style的通道数目，用来计算上采样的通道数
             dec = self.up(enc)
             # 最底下网络模块，把X和经过上采样和下采样的内容concat起来
@@ -154,3 +155,4 @@ if __name__ == '__main__':
     #                                    dtypes=['float32', 'float32'])
     paddle.summary(gNet,[(1, 3, 128, 128)],dtypes=["float32"])
     paddle.summary(gNet,[(1, 3, 128, 128),(1,)],dtypes=["float32","int32"])
+    paddle.summary(gNet,[(1, 3, 64, 64),(1,)],dtypes=["float32","int32"])# 这个就会报错，因为下采样的原因
