@@ -15,6 +15,27 @@
             "env":{ 
                 "LD_LIBRARY_PATH":"/home/liukun/anaconda3/envs/paddle_env/lib:$LD_LIBRARY_PATH"
             }
+        },
+        {
+            "name": "训练模型",
+            "type": "python",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal",
+            "cwd": "${fileDirname}",
+            "justMyCode": true,
+            "env":{ 
+                "LD_LIBRARY_PATH":"/home/liukun/anaconda3/envs/paddle_env/lib:$LD_LIBRARY_PATH"
+            },
+            "args":[
+                "--experiment_dir=tmp",
+                "--batch_size=32",
+                "--input_nc=1",
+                "--image_size=64",
+                "--epoch=100",
+                "--sample_steps=200",
+                "--checkpoint_steps=500"
+            ]
         }
     ]
 }
