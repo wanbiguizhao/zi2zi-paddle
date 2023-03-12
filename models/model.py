@@ -15,7 +15,7 @@ from models.losses import CategoryLoss, BinaryLoss
 
 from paddle.optimizer.lr import StepDecay as StepLR #.lr_scheduler import StepLR
 from utils.init_net import init_net
-from models import save_image
+from .tools import save_image
 from paddle import optimizer
 class Zi2ZiModel:
     def __init__(self, input_nc=3, embedding_num=40, embedding_dim=128,
@@ -56,7 +56,7 @@ class Zi2ZiModel:
             embedding_dim=self.embedding_dim,
             ngf=self.ngf,
             use_dropout=self.use_dropout,
-            num_downs=self.num_downs
+            num_downs=self.num_downs,
         )
         self.netD = Discriminator(
             in_num_channel=2 * self.input_nc,
@@ -226,13 +226,14 @@ class Zi2ZiModel:
                 save_filename = '%s_net_%s.pth' % (epoch, name)
                 save_path = os.path.join(self.save_dir, save_filename)
                 net = getattr(self, 'net' + name)
-
-                if self.gpu_ids and paddle.cuda.is_available():
-                    # paddle.save(net.cpu().state_dict(), save_path)
-                    paddle.save(net.state_dict(), save_path)
-                    net.cuda(self.gpu_ids[0])
-                else:
-                    paddle.save(net.cpu().state_dict(), save_path)
+                paddle.save(net.state_dict(),save_path)
+                # pytorch thing
+                # if self.gpu_ids and paddle.cuda.is_available():
+                #     # paddle.save(net.cpu().state_dict(), save_path)
+                #     paddle.save(net.state_dict(), save_path)
+                #     net.cuda(self.gpu_ids[0])
+                # else:
+                #     paddle.save(net.cpu().state_dict(), save_path)
 
     def load_networks(self, epoch):
         """Load all the networks from the disk.
@@ -258,7 +259,7 @@ class Zi2ZiModel:
         with paddle.no_grad():
             self.set_input(batch[0], batch[2], batch[1])
             self.forward()
-            tensor_to_plot = paddle.cat([self.fake_B, self.real_B], 3)
+            tensor_to_plot = paddle.concat([self.fake_B, self.real_B], 3)
             for label, image_tensor in zip(batch[0], tensor_to_plot):
                 label_dir = os.path.join(basename, str(label.item()))
                 chk_mkdir(label_dir)
