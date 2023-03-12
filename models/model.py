@@ -5,9 +5,9 @@ from .discriminators import Discriminator
 from .losses import CategoryLoss, BinaryLoss
 import os
 from paddle.optimizer.lr import StepDecay as StepLR #.lr_scheduler import StepLR
-#from utils.init_net import init_net
+from utils.init_net import init_net
 from models import save_image
-
+from paddle import optimizer
 class Zi2ZiModel:
     def __init__(self, input_nc=3, embedding_num=40, embedding_dim=128,
                  ngf=64, ndf=64,
@@ -32,8 +32,8 @@ class Zi2ZiModel:
         self.input_nc = input_nc
         self.embedding_dim = embedding_dim
         self.embedding_num = embedding_num
-        self.ngf = ngf
-        self.ndf = ndf
+        self.ngf = ngf # g 超参数，网络的通道数
+        self.ndf = ndf# d 网络的，网络通道的超参数
         self.lr = lr
         self.is_training = is_training
         self.image_size = image_size
@@ -58,8 +58,8 @@ class Zi2ZiModel:
         init_net(self.netG, gpu_ids=self.gpu_ids)
         init_net(self.netD, gpu_ids=self.gpu_ids)
 
-        self.optimizer_G = paddle.optim.Adam(self.netG.parameters(), lr=self.lr, betas=(0.5, 0.999))
-        self.optimizer_D = paddle.optim.Adam(self.netD.parameters(), lr=self.lr, betas=(0.5, 0.999))
+        self.optimizer_G = optimizer.Adam(self.netG.parameters(), lr=self.lr, betas=(0.5, 0.999))
+        self.optimizer_D = optimizer.Adam(self.netD.parameters(), lr=self.lr, betas=(0.5, 0.999))
 
         self.category_loss = CategoryLoss(self.embedding_num)
         self.real_binary_loss = BinaryLoss(True)
@@ -97,12 +97,12 @@ class Zi2ZiModel:
         # generate fake_B
 
         self.fake_B, self.encoded_real_A = self.netG(self.real_A, self.labels)
-        self.encoded_fake_B = self.netG(self.fake_B).view(self.fake_B.shape[0], -1)
+        self.encoded_fake_B = self.netG(self.fake_B).reshape(self.fake_B.shape[0], -1)# 为啥两次对B进行编码啊？
 
     def backward_D(self, no_target_source=False):
 
-        real_AB = paddle.cat([self.real_A, self.real_B], 1)
-        fake_AB = paddle.cat([self.real_A, self.fake_B], 1)
+        real_AB = paddle.concat([self.real_A, self.real_B], 1)
+        fake_AB = paddle.concat([self.real_A, self.fake_B], 1)
 
         real_D_logits, real_category_logits = self.netD(real_AB)
         fake_D_logits, fake_category_logits = self.netD(fake_AB.detach())
