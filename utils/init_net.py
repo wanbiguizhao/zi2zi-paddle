@@ -47,17 +47,21 @@ def init_weights(net, init_type='normal', init_gain=0.02):
         elif classname.find('BatchNorm2d') != -1:  # BatchNorm Layer's weight is not a matrix; only normal distribution applies.
             init.normal_(m.weight.data, 1.0, init_gain)
             init.constant_(m.bias.data, 0.0)
-    def init_func_paddle(layer):  # define the initialization function
+    def init_func_paddle(layer:nn.Layer):  # define the initialization function
         # 其他类型的初始化方法，有机会再实现
         if  type(layer) in [nn.Conv2D,nn.Linear,nn.Conv2DTranspose ]:
             weight_attr = paddle.framework.ParamAttr(
                         name="linear_weight",
                         initializer=paddle.nn.initializer.Normal(mean=0.0, std=init_gain))
+
             bias_attr = paddle.framework.ParamAttr(
                 name="linear_bias",
-                initializer=paddle.nn.initializer.ConstantInitializer(0.0))
-            layer.weight_attr=weight_attr
-            layer.bias_attr=bias_attr
+                initializer=paddle.nn.initializer.Constant(0.0))
+            weight_attr.initializer(layer.weight)
+            if hasattr(layer,"bias") and layer.bias is not None:
+                bias_attr.initializer(layer.bias)
+            ##layer.weight.set_value(weight_attr)
+            #layer.bias.set_value(bias_attr)
             return
         elif type(layer)==nn.BatchNorm2D:  # BatchNorm Layer's weight is not a matrix; only normal distribution applies.
             weight_attr = paddle.framework.ParamAttr(
@@ -65,8 +69,8 @@ def init_weights(net, init_type='normal', init_gain=0.02):
                         initializer=paddle.nn.initializer.Normal(mean=1.0, std=init_gain))
             bias_attr = paddle.framework.ParamAttr(
                 name="linear_bias",
-                initializer=paddle.nn.initializer.ConstantInitializer(0.0))
-            layer.weight_attr=weight_attr
-            layer.bias_attr=bias_attr
+                initializer=paddle.nn.initializer.Constant(0.0))
+            weight_attr.initializer(layer.weight)
+            bias_attr.initializer(layer.bias)
     print('initialize network with %s' % init_type)
     net.apply(init_func_paddle)  # apply the initialization function <init_func>

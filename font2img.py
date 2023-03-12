@@ -63,7 +63,7 @@ def draw_single_char(ch, font, canvas_size, x_offset=0, y_offset=0):
     new_len_side=max(text_high,text_wide)
     square_img=Image.new("L",(new_len_side,new_len_side),0)
     square_img.paste(text_region_img,( (new_len_side-text_high)//2, (new_len_side-text_wide)//2))
-    square_img = square_img.resize((canvas_size, canvas_size), Image.ANTIALIAS)
+    square_img = square_img.resize((canvas_size, canvas_size), Image.Resampling.LANCZOS)
     #square_img.show()
     np_square_img=255-np.array(square_img)
     square_img=Image.fromarray(np_square_img)
@@ -75,6 +75,8 @@ def draw_single_char(ch, font, canvas_size, x_offset=0, y_offset=0):
 
 def draw_font2font_example(ch, src_font, dst_font, canvas_size, x_offset, y_offset, filter_hashes):
     dst_img = draw_single_char(ch, dst_font, canvas_size, x_offset, y_offset)
+    if dst_img is None:
+        print(ch)
     # check the filter example in the hashes or not
     dst_hash = hash(dst_img.tobytes())
     if not dst_hash and dst_hash in filter_hashes:
@@ -127,7 +129,7 @@ def filter_recurring_hash(charset, font, canvas_size, x_offset, y_offset):
     hash_count = collections.defaultdict(int)
     for c in sample:
         img = draw_single_char(c, font, canvas_size, x_offset, y_offset)
-        if not img:
+        if img:
             try:
                 hash_count[hash(img.tobytes())] += 1
             except Exception() as e:
@@ -137,11 +139,21 @@ def filter_recurring_hash(charset, font, canvas_size, x_offset, y_offset):
     return [rh[0] for rh in recurring_hashes]
 
 
-def font2font(src, dst, charset, char_size, canvas_size,
+def font2font(src_fonts_path, dst_font_path, charset, char_size, canvas_size,
              x_offset, y_offset, sample_count, sample_dir, label=0, filter_by_hash=True):
-    src_font = ImageFont.truetype(src, size=char_size)
-    dst_font = ImageFont.truetype(dst, size=char_size)
 
+    src_font = TTFont(src_fonts_path)
+    dst_font = TTFont(dst_font_path)
+    # 这个是找到字体中的字符集
+    src_char_set = processGlyphNames(src_font.getGlyphNames())
+    dst_char_set = processGlyphNames(dst_font.getGlyphNames())
+    tagart_char_set=src_char_set & dst_char_set # 找到公共的字符集
+    #charSetTotal = charSetPlane00 | charSetPlane02
+
+    src_font = ImageFont.truetype(src_fonts_path, size=char_size)
+    
+    dst_font = ImageFont.truetype(dst_font_path, size=char_size)
+    
     filter_hashes = set()
     if filter_by_hash:
         filter_hashes = set(filter_recurring_hash(charset, dst_font, canvas_size, x_offset, y_offset))
@@ -149,7 +161,7 @@ def font2font(src, dst, charset, char_size, canvas_size,
 
     count = 0
 
-    for c in charset:
+    for c in tagart_char_set:
         if count == sample_count:
             break
         e = draw_font2font_example(c, src_font, dst_font, canvas_size, x_offset, y_offset, filter_hashes)

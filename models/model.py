@@ -22,7 +22,7 @@ class Zi2ZiModel:
                  ngf=64, ndf=64,
                  Lconst_penalty=15, Lcategory_penalty=1, L1_penalty=100,
                  schedule=10, lr=0.001, gpu_ids=None, save_dir='.', is_training=True,
-                 image_size=128):
+                 image_size=128,num_downs=7):
 
         if is_training:
             self.use_dropout = True
@@ -37,7 +37,7 @@ class Zi2ZiModel:
 
         self.save_dir = save_dir
         self.gpu_ids = gpu_ids
-
+        self.num_downs=num_downs
         self.input_nc = input_nc
         self.embedding_dim = embedding_dim
         self.embedding_num = embedding_num
@@ -55,7 +55,8 @@ class Zi2ZiModel:
             embedding_num=self.embedding_num,
             embedding_dim=self.embedding_dim,
             ngf=self.ngf,
-            use_dropout=self.use_dropout
+            use_dropout=self.use_dropout,
+            num_downs=self.num_downs
         )
         self.netD = Discriminator(
             in_num_channel=2 * self.input_nc,
@@ -123,7 +124,7 @@ class Zi2ZiModel:
         d_loss_real = self.real_binary_loss(real_D_logits)
         d_loss_fake = self.fake_binary_loss(fake_D_logits)
 
-        self.d_loss = d_loss_real + d_loss_fake + category_loss / 2.0
+        self.d_loss = d_loss_real + d_loss_fake + category_loss / 3.0
         self.d_loss.backward()
         return category_loss
 
@@ -278,10 +279,10 @@ def chk_mkdir(path):
     if not os.path.isdir(path):
         os.mkdir(path)
 if __name__ == '__main__':
-    z2z_model=Zi2ZiModel()
+    z2z_model=Zi2ZiModel(input_nc=1,embedding_num=40,num_downs=6,image_size=64)
     z2z_model.setup()
     for i in range(10000*200):
-        z2z_model.set_input(paddle.randint(low=0,high=40,shape=[1]),paddle.rand([1,3,128,128]),paddle.rand([1,3,128,128]))
+        z2z_model.set_input(paddle.randint(low=0,high=40,shape=[1]),paddle.rand([1,1,64,64]),paddle.rand([1,1,64,64]))
         const_loss, l1_loss, category_loss, cheat_loss = z2z_model.optimize_parameters()
         log_format = "Epoch: [%2d], [%4d/%4d] time: %4.2f, d_loss: %.5f, g_loss: %.5f, " + \
                              "category_loss: %.5f, cheat_loss: %.5f, const_loss: %.5f, l1_loss: %.5f"
