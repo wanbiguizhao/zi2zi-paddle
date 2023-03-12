@@ -23,9 +23,9 @@ class BinaryLoss(nn.Layer):
 
     def forward(self, logits):
         if self.real:
-            labels = paddle.ones(logits.shape[0], 1)
+            labels = paddle.ones((logits.shape[0], 1))
         else:
-            labels = paddle.zeros(logits.shape[0], 1)
-        if logits.is_cuda:
-            labels = labels.cuda()
+            labels = paddle.zeros((logits.shape[0], 1))
+        # if logits.place.is_cuda: 这块儿代码的意思是，把数据从gpu内存中拷贝出来，然后在cpu计算，todo：以后再支持cpu运行吧
+        #     labels = labels.cuda()
         return self.bce(logits, labels)

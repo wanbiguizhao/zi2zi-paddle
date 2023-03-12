@@ -22,7 +22,7 @@ class Zi2ZiModel:
                  ngf=64, ndf=64,
                  Lconst_penalty=15, Lcategory_penalty=1, L1_penalty=100,
                  schedule=10, lr=0.001, gpu_ids=None, save_dir='.', is_training=True,
-                 image_size=256):
+                 image_size=128):
 
         if is_training:
             self.use_dropout = True
@@ -106,7 +106,7 @@ class Zi2ZiModel:
         # generate fake_B
 
         self.fake_B, self.encoded_real_A = self.netG(self.real_A, self.labels)
-        self.encoded_fake_B = self.netG(self.fake_B).reshape(self.fake_B.shape[0], -1)# 为啥两次对B进行编码啊？
+        self.encoded_fake_B = self.netG(self.fake_B).reshape((self.fake_B.shape[0], -1))# 为啥两次对B进行编码啊？
 
     def backward_D(self, no_target_source=False):
 
@@ -129,7 +129,7 @@ class Zi2ZiModel:
 
     def backward_G(self, no_target_source=False):
 
-        fake_AB = paddle.cat([self.real_A, self.fake_B], 1)
+        fake_AB = paddle.concat([self.real_A, self.fake_B], 1)
         fake_D_logits, fake_category_logits = self.netD(fake_AB)
 
         # encoding constant loss
@@ -167,12 +167,12 @@ class Zi2ZiModel:
         self.forward()  # compute fake images: G(A)
         # update D
         self.set_requires_grad(self.netD, True)  # enable backprop for D
-        self.optimizer_D.zero_grad()  # set D's gradients to zero
+        self.optimizer_D.clear_grad()  # set D's gradients to zero
         category_loss = self.backward_D()  # calculate gradients for D
         self.optimizer_D.step()  # update D's weights
         # update G
         self.set_requires_grad(self.netD, False)  # D requires no gradients when optimizing G
-        self.optimizer_G.zero_grad()  # set G's gradients to zero
+        self.optimizer_G.clear_grad()  # set G's gradients to zero
         self.backward_G()  # calculate gradients for G
         self.optimizer_G.step()  # udpate G's weights
 
@@ -180,7 +180,7 @@ class Zi2ZiModel:
         # according to https://github.com/carpedm20/DCGAN-tensorflow
         # collect all the losses along the way
         self.forward()  # compute fake images: G(A)
-        self.optimizer_G.zero_grad()  # set G's gradients to zero
+        self.optimizer_G.clear_grad()  # set G's gradients to zero
         const_loss, l1_loss, cheat_loss = self.backward_G()  # calculate gradients for G
         self.optimizer_G.step()  # udpate G's weights
         return const_loss, l1_loss, category_loss, cheat_loss
@@ -280,3 +280,10 @@ def chk_mkdir(path):
 if __name__ == '__main__':
     z2z_model=Zi2ZiModel()
     z2z_model.setup()
+    for i in range(10000*200):
+        z2z_model.set_input(paddle.randint(low=0,high=40,shape=[1]),paddle.rand([1,3,128,128]),paddle.rand([1,3,128,128]))
+        const_loss, l1_loss, category_loss, cheat_loss = z2z_model.optimize_parameters()
+        log_format = "Epoch: [%2d], [%4d/%4d] time: %4.2f, d_loss: %.5f, g_loss: %.5f, " + \
+                             "category_loss: %.5f, cheat_loss: %.5f, const_loss: %.5f, l1_loss: %.5f"
+        print(log_format % (i, 1, 1, 1, z2z_model.d_loss.item(), z2z_model.g_loss.item(),
+                                    category_loss, cheat_loss, const_loss, l1_loss))
