@@ -67,9 +67,9 @@ class Zi2ZiModel:
 
         init_net(self.netG, gpu_ids=self.gpu_ids)
         init_net(self.netD, gpu_ids=self.gpu_ids)
-
-        self.optimizer_G = optimizer.Adam( parameters= self.netG.parameters(), learning_rate=self.lr,beta1= 0.5, beta2= 0.999)
-        self.optimizer_D = optimizer.Adam(parameters=self.netD.parameters(), learning_rate=self.lr,beta1= 0.5, beta2= 0.999)
+        scheduler = optimizer.lr.MultiStepDecay(learning_rate=self.lr, milestones=[200, 600, 1000], gamma=0.8, verbose=True)
+        self.optimizer_G = optimizer.Adam( parameters= self.netG.parameters(), learning_rate=scheduler,beta1= 0.5, beta2= 0.999)
+        self.optimizer_D = optimizer.Adam(parameters=self.netD.parameters(), learning_rate=scheduler,beta1= 0.5, beta2= 0.999)
 
         self.category_loss = CategoryLoss(self.embedding_num)
         self.real_binary_loss = BinaryLoss(True)
