@@ -121,7 +121,7 @@ def main():
             global_steps += 1
         if (epoch + 1) % args.schedule == 0:
             #model.update_lr()
-            print(model.optimizer_D.get_lr(),model.optimize_parameters.get_lr())
+            print(model.optimizer_D.get_lr(),model.optimizer_G.get_lr())
     for vbid, val_batch in enumerate(val_dataloader):
         model.sample(val_batch, os.path.join(sample_dir, str(global_steps)))
         print("Checkpoint: save checkpoint step %d" % global_steps)
