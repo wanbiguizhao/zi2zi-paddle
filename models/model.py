@@ -1,9 +1,18 @@
+import os
+PROJECT_ROOT=os.path.dirname(
+    os.path.dirname(
+        os.path.realpath(__file__)
+    )
+)
+import sys 
+sys.path.append(PROJECT_ROOT)
+print(PROJECT_ROOT)
 import paddle
 import paddle.nn as nn
-from .generators import UNetGenerator
-from .discriminators import Discriminator
-from .losses import CategoryLoss, BinaryLoss
-import os
+from models.generators import UNetGenerator
+from models.discriminators import Discriminator
+from models.losses import CategoryLoss, BinaryLoss
+
 from paddle.optimizer.lr import StepDecay as StepLR #.lr_scheduler import StepLR
 from utils.init_net import init_net
 from models import save_image
@@ -49,17 +58,17 @@ class Zi2ZiModel:
             use_dropout=self.use_dropout
         )
         self.netD = Discriminator(
-            input_nc=2 * self.input_nc,
+            in_num_channel=2 * self.input_nc,
             embedding_num=self.embedding_num,
-            ndf=self.ndf,
+            out_num_channel=self.ndf,
             image_size=self.image_size
         )
 
         init_net(self.netG, gpu_ids=self.gpu_ids)
         init_net(self.netD, gpu_ids=self.gpu_ids)
 
-        self.optimizer_G = optimizer.Adam(self.netG.parameters(), lr=self.lr, betas=(0.5, 0.999))
-        self.optimizer_D = optimizer.Adam(self.netD.parameters(), lr=self.lr, betas=(0.5, 0.999))
+        self.optimizer_G = optimizer.Adam( parameters= self.netG.parameters(), learning_rate=self.lr,beta1= 0.5, beta2= 0.999)
+        self.optimizer_D = optimizer.Adam(parameters=self.netD.parameters(), learning_rate=self.lr,beta1= 0.5, beta2= 0.999)
 
         self.category_loss = CategoryLoss(self.embedding_num)
         self.real_binary_loss = BinaryLoss(True)
@@ -268,3 +277,6 @@ class Zi2ZiModel:
 def chk_mkdir(path):
     if not os.path.isdir(path):
         os.mkdir(path)
+if __name__ == '__main__':
+    z2z_model=Zi2ZiModel()
+    z2z_model.setup()

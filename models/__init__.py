@@ -1,4 +1,7 @@
-from .model import Zi2ZiModel
+# from .model import Zi2ZiModel
+# from .discriminators import Discriminator
+# from .generators import UNetGenerator
+
 import pathlib
 import paddle
 import warnings
