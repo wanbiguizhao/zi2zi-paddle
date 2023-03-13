@@ -76,6 +76,7 @@ class Discriminator(nn.Layer):
         # 131072 = 512(num_of_channels) * (w/2/2/2) * (h/2/2/2) = 2^17  (w=h=128)
         final_features = final_channels * image_size * image_size # 这个应该是计算了出来最终输出图像的维度，然后完全线性化操作。
         self.binary = nn.Linear(final_features, 1)
+        self.prob =nn.Sigmoid()
         self.catagory = nn.Linear(final_features, embedding_num)# 计算分类的损失，
 
     def forward(self, input):
@@ -85,7 +86,7 @@ class Discriminator(nn.Layer):
         features = features.reshape((input.shape[0], -1))
         binary_logits = self.binary(features)
         catagory_logits = self.catagory(features)
-        return binary_logits, catagory_logits
+        return self.prob(binary_logits), self.prob(catagory_logits)
 
 
 if __name__ == '__main__':
