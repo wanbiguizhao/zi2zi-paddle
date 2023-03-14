@@ -78,6 +78,8 @@ class Discriminator(nn.Layer):
         self.binary = nn.Linear(final_features, 1)
         self.prob =nn.Sigmoid()
         self.catagory = nn.Linear(final_features, embedding_num)# 计算分类的损失，
+        self.soft_max_catagory=nn.Softmax
+        
 
     def forward(self, input):
         """Standard forward."""
@@ -86,7 +88,7 @@ class Discriminator(nn.Layer):
         features = features.reshape((input.shape[0], -1))
         binary_logits = self.binary(features)
         catagory_logits = self.catagory(features)
-        return self.prob(binary_logits), self.prob(catagory_logits)
+        return self.prob(binary_logits), self.soft_max_catagory(catagory_logits)
 
 
 if __name__ == '__main__':
