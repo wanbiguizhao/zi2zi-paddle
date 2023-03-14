@@ -67,10 +67,11 @@ class Zi2ZiModel:
 
         init_net(self.netG, gpu_ids=self.gpu_ids)
         init_net(self.netD, gpu_ids=self.gpu_ids)
-        scheduler = optimizer.lr.MultiStepDecay(learning_rate=self.lr, milestones=[20, 60, 180,300,500,700,900,1000], gamma=[0.8,0.7,0.6,0.5,0.4], verbose=True)
-        self.optimizer_G = optimizer.Adam( parameters= self.netG.parameters(), learning_rate=scheduler,beta1= 0.5, beta2= 0.999)
-        scheduler = optimizer.lr.MultiStepDecay(learning_rate=self.lr, milestones=[20, 60, 180,300,500,700,900,1000], gamma=[0.8,0.7,0.6,0.5,0.4], verbose=True)
-        self.optimizer_D = optimizer.Adam(parameters=self.netD.parameters(), learning_rate=scheduler,beta1= 0.5, beta2= 0.999)
+
+        self.gnet_scheduler = optimizer.lr.OneCycleLR(max_learning_rate=self.lr,total_steps=100,end_learning_rate=self.lr/1000.0 , verbose=True)
+        self.optimizer_G = optimizer.Adam( parameters= self.netG.parameters(), learning_rate=self.gnet_scheduler,beta1= 0.5, beta2= 0.999)
+        self.dnet_scheduler = optimizer.lr.OneCycleLR(max_learning_rate=self.lr,total_steps=100,end_learning_rate=self.lr/1000.0 , verbose=True)
+        self.optimizer_D = optimizer.Adam(parameters=self.netD.parameters(), learning_rate=self.dnet_scheduler,beta1= 0.5, beta2= 0.999)
 
         self.category_loss = CategoryLoss(self.embedding_num)
         self.real_binary_loss = BinaryLoss(True)
@@ -149,21 +150,23 @@ class Zi2ZiModel:
 
     def update_lr(self):
         # There should be only one param_group.
-        for p in self.optimizer_D.param_groups:
-            current_lr = p['lr']
-            update_lr = current_lr / 2.0
-            # minimum learning rate guarantee
-            update_lr = max(update_lr, 0.0002)
-            p['lr'] = update_lr
-            print("Decay net_D learning rate from %.5f to %.5f." % (current_lr, update_lr))
+        # for p in self.optimizer_D.param_groups:
+        #     current_lr = p['lr']
+        #     update_lr = current_lr / 2.0
+        #     # minimum learning rate guarantee
+        #     update_lr = max(update_lr, 0.0002)
+        #     p['lr'] = update_lr
+        #     print("Decay net_D learning rate from %.5f to %.5f." % (current_lr, update_lr))
 
-        for p in self.optimizer_G.param_groups:
-            current_lr = p['lr']
-            update_lr = current_lr / 2.0
-            # minimum learning rate guarantee
-            update_lr = max(update_lr, 0.0002)
-            p['lr'] = update_lr
-            print("Decay net_G learning rate from %.5f to %.5f." % (current_lr, update_lr))
+        # for p in self.optimizer_G.param_groups:
+        #     current_lr = p['lr']
+        #     update_lr = current_lr / 2.0
+        #     # minimum learning rate guarantee
+        #     update_lr = max(update_lr, 0.0002)
+        #     p['lr'] = update_lr
+        #     print("Decay net_G learning rate from %.5f to %.5f." % (current_lr, update_lr))
+        self.gnet_scheduler.step()
+        self.dnet_scheduler.step()
 
     def optimize_parameters(self):
         self.forward()  # compute fake images: G(A)

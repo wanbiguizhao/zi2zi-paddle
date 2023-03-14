@@ -27,7 +27,7 @@ parser.add_argument('--embedding_dim', type=int, default=128, help="dimension fo
 parser.add_argument('--epoch', type=int, default=100, help='number of epoch')
 parser.add_argument('--batch_size', type=int, default=16, help='number of examples in batch')
 parser.add_argument('--lr', type=float, default=0.001, help='initial learning rate for adam')
-parser.add_argument('--schedule', type=int, default=20, help='number of epochs to half learning rate')
+parser.add_argument('--schedule', type=int, default=3, help='number of epochs to half learning rate')
 parser.add_argument('--freeze_encoder', action='store_true',
                     help="freeze encoder weights during training")
 parser.add_argument('--fine_tune', type=str, default=None,
@@ -121,7 +121,7 @@ def main():
             global_steps += 1
         if (epoch + 1) % args.schedule == 0:
             #model.update_lr()
-            print(model.optimizer_D.get_lr(),model.optimizer_G.get_lr())
+            model.update_lr()
     for vbid, val_batch in enumerate(val_dataloader):
         model.sample(val_batch, os.path.join(sample_dir, str(global_steps)))
         print("Checkpoint: save checkpoint step %d" % global_steps)
