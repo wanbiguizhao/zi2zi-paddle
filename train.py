@@ -45,7 +45,8 @@ parser.add_argument('--random_seed', type=int, default=777,
 parser.add_argument('--resume', type=int, default=None, help='resume from previous training')
 parser.add_argument('--input_nc', type=int, default=3,
                     help='number of input images channels')
-
+parser.add_argument('--num_downs', type=int, default=7,
+                    help='下采样的次数')
 def chkormakedir(path):
     if not os.path.isdir(path):
         os.mkdir(path)
@@ -77,7 +78,7 @@ def main():
         save_dir=checkpoint_dir,
         gpu_ids=args.gpu_ids,
         image_size=args.image_size,
-        num_downs=6
+        num_downs=args.num_downs
     )
     model.setup()
     model.print_networks(True)

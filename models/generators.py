@@ -52,7 +52,7 @@ class UNetGenerator(nn.Layer):
         if style_or_label is not None and hasattr(style_or_label.type,"LOD_TENSOR"):
             return self.model(x, self.embedder(style_or_label))
         else:
-            return self.model(x, style_or_label)
+            return self.model(x, style_or_label),None
 
 
 class UnetSkipConnectionBlock(nn.Layer):

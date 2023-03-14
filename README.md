@@ -29,6 +29,12 @@ python3 font2img.py  --char_size=256 --canvas_size=256 --src_font=data/font/方�
 python3 font2img.py  --char_size=256 --canvas_size=256 --src_font=data/font/方正隶书_GBK.ttf --dst_font=data/font/ZhongHuaSong/FZSONG_ZhongHuaSongPlane00_2020051520200519101119.TTF --charset=CN --sample_count=1500 --sample_dir=sample_dir --label=3 --filter --shuffle --mode=font2font
 
 python3 font2img.py  --char_size=256 --canvas_size=256 --src_font=data/font/方正隶书_GBK.ttf --dst_font=data/font/cjk/FZSTK.TTF --charset=CN --sample_count=1500 --sample_dir=sample_dir --label=4 --filter --shuffle --mode=font2font
+
+
+
+
+python3 font2img.py  --char_size=256 --canvas_size=256 --src_font=data/font/方正兰亭粗黑_GBK.TTF --dst_font=data/font/方正书宋_GBK.ttf --charset=CN --sample_count=1500 --sample_dir=sample_dir --label=0 --filter --shuffle --mode=font2font
+
 ```
 ## 生成二进制训练文件
 

@@ -87,8 +87,9 @@ class Discriminator(nn.Layer):
         features = self.model(input)
         features = features.reshape((input.shape[0], -1))
         binary_logits = self.binary(features)
-        catagory_logits = self.soft_max_catagory(self.catagory(features))
-        return self.prob(binary_logits), catagory_logits
+        # catagory_logits = self.soft_max_catagory(self.catagory(features))
+        # return self.prob(binary_logits), catagory_logits
+        return binary_logits
 
 
 if __name__ == '__main__':
