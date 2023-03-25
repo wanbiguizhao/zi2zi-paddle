@@ -252,10 +252,12 @@ class Zi2ZiModel:
                 load_path = os.path.join(self.save_dir, load_filename)
                 net = getattr(self, 'net' + name)
 
-                if self.gpu_ids and paddle.cuda.is_available():
-                    net.load(paddle.load(load_path))
-                else:
-                    net.load(paddle.load(load_path,map_location=paddle.device('cpu')))
+                net.set_state_dict(paddle.load(load_path))
+                # if self.gpu_ids and paddle.cuda.is_available():
+                #     net.load(paddle.load(load_path))
+                # else:
+                #     net.load(paddle.load(load_path,map_location=paddle.device('cpu')))
+                # net.eval()
                 # net.eval()
         print('load model %d' % epoch)
 
