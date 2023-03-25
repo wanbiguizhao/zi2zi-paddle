@@ -247,7 +247,7 @@ class Zi2ZiModel:
         self.max_save_path_list.append(GD_SAVE_PATH)
         if len(self.max_save_path_list)>5:
             # 最多保留五个模型
-            REMOVE_GD_PATH=self.max_save_path_list.pop()
+            REMOVE_GD_PATH=self.max_save_path_list.pop(0)
             for model_path in REMOVE_GD_PATH:
                 if os.path.exists(model_path):
                     os.remove(model_path)
