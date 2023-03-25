@@ -47,6 +47,8 @@ class Zi2ZiModel:
         self.is_training = is_training
         self.image_size = image_size
 
+        self.max_save_path_list=[]
+
     def setup(self):
 
         self.netG = UNetGenerator(
@@ -226,12 +228,14 @@ class Zi2ZiModel:
         Parameters:
             epoch (int) -- current epoch; used in the file name '%s_net_%s.pth' % (epoch, name)
         """
+        GD_SAVE_PATH=[]
         for name in ['G', 'D']:
             if isinstance(name, str):
                 save_filename = '%s_net_%s.pth' % (epoch, name)
                 save_path = os.path.join(self.save_dir, save_filename)
                 net = getattr(self, 'net' + name)
                 paddle.save(net.state_dict(),save_path)
+                GD_SAVE_PATH.append(save_path)
                 
                 # pytorch thing
                 # if self.gpu_ids and paddle.cuda.is_available():
@@ -240,6 +244,14 @@ class Zi2ZiModel:
                 #     net.cuda(self.gpu_ids[0])
                 # else:
                 #     paddle.save(net.cpu().state_dict(), save_path)
+        self.max_save_path_list.append(GD_SAVE_PATH)
+        if len(self.max_save_path_list)>5:
+            # 最多保留五个模型
+            REMOVE_GD_PATH=self.max_save_path_list.pop()
+            for model_path in REMOVE_GD_PATH:
+                if os.path.exists(model_path):
+                    os.remove(model_path)
+        
 
     def load_networks(self, epoch):
         """Load all the networks from the disk.
