@@ -31,11 +31,11 @@
                 "--experiment_dir=tmp",
                 "--batch_size=32",
                 "--input_nc=1",
-                "--image_size=256",
+                "--image_size=64",
                 "--epoch=100",
                 "--sample_steps=200",
                 "--checkpoint_steps=500",
-                "--num_downs=8",
+                "--num_downs=6",
             ]
         }
     ]

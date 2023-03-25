@@ -39,7 +39,7 @@ python3 font2img.py  --char_size=256 --canvas_size=256 --src_font=data/font/方�
 ## 生成二进制训练文件
 
 ``` sh
-python raw_package.py --dir=sample_dir/  --save_dir=tmp/data   --split_ratio=0.8
+python raw_package.py --dir=sample_dir/  --save_dir=tmp/data   --split_ratio=0.2
 ```
 
 ## 训练模型
