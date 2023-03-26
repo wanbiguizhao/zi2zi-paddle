@@ -54,6 +54,7 @@
                 "--resume=80400",
                 "--input_nc=1",
                 "--image_size=64",
+                "--batch_size=32",
                 "--num_downs=6"
 
             ]

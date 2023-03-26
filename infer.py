@@ -1,19 +1,20 @@
+from typing import Tuple
 from data import DatasetFromObj
 import paddle
-from paddle.io import DataLoader, TensorDataset
+from paddle.io import DataLoader, TensorDataset,Dataset
 from models import Zi2ZiModel
 import os
+PROJECT_DIR= os.path.dirname(
+    os.path.realpath( __file__)
+)
 import argparse
-#import torch
-# import random
 import time
-# import math
-# import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 import paddle.vision.transforms as transforms
 from models import save_image, make_grid
 import time
 from models import chk_mkdir
+import cv2 as cv
 
 writer_dict = {
         '智永': 0, ' 隸書-趙之謙': 1, '張即之': 2, '張猛龍碑': 3, '柳公權': 4, '標楷體-手寫': 5, '歐陽詢-九成宮': 6,
@@ -63,6 +64,48 @@ def draw_single_char(ch, font, canvas_size):
     img = img.convert('L')
     return img
 
+class ImageDataset(Dataset):
+    def __init__(self,image_list ) -> None:
+        self.image_list=image_list
+
+    def __getitem__(self, index):
+        #return item[0] - self.start_from, img_A, img_B
+        return 0, self.image_list[index], self.image_list[index]
+
+    def __len__(self):
+        return len(self.image_list)
+
+
+def load_dataset_from_image():
+    BASE_IMAGE_PATH=os.path.join(PROJECT_DIR,"tmp","word2imgtop10_64")
+    img_list=[]
+    label_list=[]
+    LABLE=0
+    import glob
+    for png_path in glob.glob(os.path.join(BASE_IMAGE_PATH,"*","*.png"),recursive=True):
+        #print(png_path)
+        with Image.open(png_path) as im:
+            im=im.convert("L")
+
+            img_list.append(
+                transforms.Normalize([0.5], [0.5])(
+                transforms.ToTensor()(im)
+            ).unsqueeze(axis=0)
+            )
+            label_list.append(LABLE)
+    
+
+    img_list = paddle.concat(img_list, axis=0)
+
+    label_list = paddle.to_tensor(label_list)
+
+    dataset = ImageDataset( img_list)
+    dataloader = DataLoader(dataset, batch_size=32, shuffle=True)
+    return dataloader
+
+        
+
+
 
 def main():
     args = parser.parse_args()
@@ -96,33 +139,40 @@ def main():
 
     t1 = time.time()
 
-    if args.from_txt:
-        src = args.src_txt
-        font = ImageFont.truetype(args.src_font, size=args.char_size)
-        img_list = [transforms.Normalize(0.5, 0.5)(
-            transforms.ToTensor()(
-                draw_single_char(ch, font, args.canvas_size)
-            )
-        ).unsqueeze(dim=0) for ch in src]
-        label_list = [args.label for _ in src]
+    # 直接从加载图片，生成dataset
 
-        img_list = paddle.concat(img_list, dim=0)
-        label_list = paddle.tensor(label_list)
+    # if args.from_txt:
+    #     src = args.src_txt
+    #     font = ImageFont.truetype(args.src_font, size=args.char_size)
+    #     img_list = [transforms.Normalize(0.5, 0.5)(
+    #         transforms.ToTensor()(
+    #             draw_single_char(ch, font, args.canvas_size)
+    #         )
+    #     ).unsqueeze(dim=0) for ch in src]
+    #     label_list = [args.label for _ in src]
 
-        dataset = TensorDataset(label_list, img_list, img_list)
-        dataloader = DataLoader(dataset, batch_size=args.batch_size, shuffle=False)
+    #     img_list = paddle.concat(img_list, dim=0)
+    #     label_list = paddle.tensor(label_list)
 
-    else:
-        val_dataset = DatasetFromObj(os.path.join(data_dir, 'val.obj'),
-                                     input_nc=args.input_nc,
-                                     start_from=args.start_from)
-        dataloader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False)
+    #     dataset = TensorDataset(label_list, img_list, img_list)
+    #     dataloader = DataLoader(dataset, batch_size=args.batch_size, shuffle=False)
 
+    # else:
+    #     val_dataset = DatasetFromObj(os.path.join(data_dir, 'val.obj'),
+    #                                  input_nc=args.input_nc,
+    #                                  start_from=args.start_from)
+    #     dataloader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False)
+
+    dataloader=load_dataset_from_image()
+    # val_dataset = DatasetFromObj(os.path.join(data_dir, 'val.obj'),
+    #                                  input_nc=args.input_nc,
+    #                                  start_from=args.start_from)
+    # dataloader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False)
     global_steps = 0
     # with open(args.type_file, 'r', encoding='utf-8') as fp:
     #     fonts = [s.strip() for s in fp.readlines()]
     # writer_dict = {v: k for k, v in enumerate(fonts)}
-
+    # 真正测试时，只需要使用G网络就可以了。
     for batch in dataloader:
         if args.run_all_label:
             # global writer_dict
@@ -136,6 +186,9 @@ def main():
         else:
             # model.set_input(batch[0], batch[2], batch[1])
             # model.optimize_parameters()
+            # model.netG(
+                
+            # )
             model.sample(batch, os.path.join(infer_dir,str(global_steps).rjust(4,"0")))
             global_steps += 1
 
@@ -146,4 +199,5 @@ def main():
 
 if __name__ == '__main__':
     with paddle.no_grad():
+        #load_dataset_from_image()
         main()
