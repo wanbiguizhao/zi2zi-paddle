@@ -1,18 +1,19 @@
 from data import DatasetFromObj
-from torch.utils.data import DataLoader, TensorDataset
-from model import Zi2ZiModel
+import paddle
+from paddle.io import DataLoader, TensorDataset
+from models import Zi2ZiModel
 import os
 import argparse
-import torch
-import random
+#import torch
+# import random
 import time
-import math
-import numpy as np
+# import math
+# import numpy as np
 from PIL import Image, ImageDraw, ImageFont
-import torchvision.transforms as transforms
-from torchvision.utils import save_image, make_grid
+import paddle.vision.transforms as transforms
+from models import save_image, make_grid
 import time
-from model.model import chk_mkdir
+from models import chk_mkdir
 
 writer_dict = {
         '智永': 0, ' 隸書-趙之謙': 1, '張即之': 2, '張猛龍碑': 3, '柳公權': 4, '標楷體-手寫': 5, '歐陽詢-九成宮': 6,
@@ -52,7 +53,8 @@ parser.add_argument('--run_all_label', action='store_true')
 parser.add_argument('--label', type=int, default=0)
 parser.add_argument('--src_font', type=str, default='charset/gbk/方正新楷体_GBK(完整).TTF')
 parser.add_argument('--type_file', type=str, default='type/宋黑类字符集.txt')
-
+parser.add_argument('--num_downs', type=int, default=7,
+                    help='下采样的次数')
 
 def draw_single_char(ch, font, canvas_size):
     img = Image.new("RGB", (canvas_size, canvas_size), (255, 255, 255))
@@ -84,7 +86,9 @@ def main():
         Lcategory_penalty=args.Lcategory_penalty,
         save_dir=checkpoint_dir,
         gpu_ids=args.gpu_ids,
-        is_training=False
+        is_training=False,
+        image_size=args.image_size,
+        num_downs=args.num_downs
     )
     model.setup()
     model.print_networks(True)
@@ -102,8 +106,8 @@ def main():
         ).unsqueeze(dim=0) for ch in src]
         label_list = [args.label for _ in src]
 
-        img_list = torch.cat(img_list, dim=0)
-        label_list = torch.tensor(label_list)
+        img_list = paddle.concat(img_list, dim=0)
+        label_list = paddle.tensor(label_list)
 
         dataset = TensorDataset(label_list, img_list, img_list)
         dataloader = DataLoader(dataset, batch_size=args.batch_size, shuffle=False)
@@ -115,9 +119,9 @@ def main():
         dataloader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False)
 
     global_steps = 0
-    with open(args.type_file, 'r', encoding='utf-8') as fp:
-        fonts = [s.strip() for s in fp.readlines()]
-    writer_dict = {v: k for k, v in enumerate(fonts)}
+    # with open(args.type_file, 'r', encoding='utf-8') as fp:
+    #     fonts = [s.strip() for s in fp.readlines()]
+    # writer_dict = {v: k for k, v in enumerate(fonts)}
 
     for batch in dataloader:
         if args.run_all_label:
@@ -132,7 +136,7 @@ def main():
         else:
             # model.set_input(batch[0], batch[2], batch[1])
             # model.optimize_parameters()
-            model.sample(batch, infer_dir)
+            model.sample(batch, os.path.join(infer_dir,str(global_steps).rjust(4,"0")))
             global_steps += 1
 
     t_finish = time.time()
@@ -141,5 +145,5 @@ def main():
 
 
 if __name__ == '__main__':
-    with torch.no_grad():
+    with paddle.no_grad():
         main()

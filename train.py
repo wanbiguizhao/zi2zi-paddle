@@ -78,7 +78,8 @@ def main():
         save_dir=checkpoint_dir,
         gpu_ids=args.gpu_ids,
         image_size=args.image_size,
-        num_downs=args.num_downs
+        num_downs=args.num_downs,
+        
     )
     model.setup()
     model.print_networks(True)

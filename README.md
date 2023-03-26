@@ -54,6 +54,8 @@ python train.py --experiment_dir=tmp  --batch_size=128  --input_nc=1 --image_siz
 
 ```
 
+## 测试模型
+
 # 代码结构大致说明
 
 

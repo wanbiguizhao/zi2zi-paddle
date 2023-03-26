@@ -37,6 +37,26 @@
                 "--checkpoint_steps=500",
                 "--num_downs=6",
             ]
+        },
+        {
+            "name": "测试模型",
+            "type": "python",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal",
+            "cwd": "${fileDirname}",
+            "justMyCode": true,
+            "env":{ 
+                "LD_LIBRARY_PATH":"/home/liukun/anaconda3/envs/paddle_env/lib:$LD_LIBRARY_PATH"
+            },
+            "args":[
+                "--experiment_dir=tmp",
+                "--resume=80400",
+                "--input_nc=1",
+                "--image_size=64",
+                "--num_downs=6"
+
+            ]
         }
     ]
 }
